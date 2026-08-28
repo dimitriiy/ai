@@ -1,0 +1,23 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# --- Project state / secrets ---
+.env
+data/
+worktrees/
+worktrees.bak/
+
+# --- Frontend ---
+node_modules/
+dist/
+
+# --- Tooling artefacts (Claude Code, aider, openmemcache, IDEs) ---
+.claude/
+.agents/
+.omc/
+.aider*
+.idea/
