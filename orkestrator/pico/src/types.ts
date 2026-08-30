@@ -1,5 +1,6 @@
 export type Stage =
   | "fetch"
+  // | "context"
   | "plan"
   | "implement"
   | "verify"
@@ -7,7 +8,7 @@ export type Stage =
   | "done"
   | "failed";
 
-export type TaskStatus = "penging" | "running" | "done" | "blocked" | "failed";
+export type TaskStatus = "pending" | "running" | "done" | "blocked" | "failed";
 
 export type EventKind =
   | "stage_started"
@@ -41,7 +42,14 @@ export interface TaskEvent {
   payload: Record<string, unknown>;
 }
 
-export const PIPELINE: Stage[] = ["fetch", "plan", "implement", "verify", "pr"];
+export const PIPELINE: Stage[] = [
+  "fetch",
+  "context",
+  "plan",
+  "implement",
+  "verify",
+  "pr",
+];
 
 export const nextStage = (stage: Stage) => {
   const i = PIPELINE.indexOf(stage);

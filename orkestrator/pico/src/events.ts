@@ -90,7 +90,7 @@ export const withStage = async <T>(
   stage: Stage,
   fn: () => Promise<T>,
   input?: Record<string, unknown>,
-) => {
+): Promise<T> => {
   const startedAt = Date.now();
 
   try {
@@ -101,6 +101,8 @@ export const withStage = async <T>(
     const durationMs = Date.now() - startedAt;
 
     recordEvent(taskId, stage, "stage_finished", { durationMs, output });
+
+    return output;
   } catch (err) {
     recordEvent(taskId, stage, "stage_failed", {
       durationMs: Date.now() - startedAt,
