@@ -16,7 +16,7 @@ interface Row {
   updated_at: string;
 }
 
-function rowToTask(row: Row): Task {
+export function rowToTask(row: Row): Task {
   return {
     id: row.id,
     issueNumber: row.issue_number,

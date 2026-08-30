@@ -1,6 +1,6 @@
 import type { Task } from "../types";
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface FetchResult {
   issueData: {
@@ -17,8 +17,8 @@ export interface FetchResult {
 }
 
 export async function run(task: Task): Promise<FetchResult> {
-  await delay(Math.random() * 2000); // 0-2s
-  
+  await delay(5000); // 0-2s
+
   return {
     issueData: {
       title: task.issueTitle || "Mock Issue Title",

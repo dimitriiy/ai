@@ -1,7 +1,9 @@
+import { db } from "./db";
 import { runTask } from "./pipeline";
 import { upsertTask } from "./state";
 export const main = async () => {
   try {
+    db.prepare("DELETE FROM stage_results WHERE task_id = ?").run(1);
     const task = upsertTask({
       issueNumber: 1,
       issueTitle: "Demo task",

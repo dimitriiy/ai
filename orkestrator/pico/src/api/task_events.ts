@@ -1,15 +1,7 @@
 import { Application, Request, Response, NextFunction } from "express";
 import { db } from "../db";
 
-const cache = new Set();
-
-//   seq: number;
-//   taskId: number;
-//   stage: Stage;
-//   kind: EventKind;
-//   tsMs: number;
-//   payload: Record<string, unknown>;
-// }
+const cache = new Map();
 
 export const createTasksEventsApi = (app: Application) => {
   app.get("/api/task_events", (req, res) => {
@@ -18,16 +10,21 @@ export const createTasksEventsApi = (app: Application) => {
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
     res.write(": connected\n\n");
+    const id = req.query.v;
+
+    if (!cache.has(id)) {
+      cache.set(id, new Set());
+    }
 
     setInterval(() => {
       const data = db.prepare("SELECT * from task_events").all();
 
       data.forEach((event) => {
-        const id = `${event.id}-${event.seq}`;
+        const complexId = `${event.id}-${event.seq}`;
 
-        if (!cache.has(id)) {
-          cache.add(id);
-          res.write(`${JSON.stringify(event, null, 2)}\n\n`);
+        if (!cache.get(id).has(complexId)) {
+          cache.get(id).add(complexId);
+          res.write(`data: ${JSON.stringify(event)}\n\n`);
         }
       });
     }, 1000);

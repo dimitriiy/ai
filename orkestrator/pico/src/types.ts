@@ -44,7 +44,7 @@ export interface TaskEvent {
 
 export const PIPELINE: Stage[] = [
   "fetch",
-  "context",
+  // "context",
   "plan",
   "implement",
   "verify",
