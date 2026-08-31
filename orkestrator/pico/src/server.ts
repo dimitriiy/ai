@@ -2,11 +2,10 @@ import "./db";
 
 import cors from "cors";
 import express from "express";
-import { createTaskApi } from "./api/task";
-import { createTasksApi } from "./api/tasks";
+import taskRouter from "./api/task";
+import tasksRouter from "./api/tasks";
+import taskEventsRouter from "./api/task_events";
 import { main } from "./scratch";
-import { createTasksEventsApi } from "./api/task_events";
-import { createStepperDemoApi } from "./api/stepper-demo";
 
 const app = express();
 
@@ -17,15 +16,12 @@ app.use(
   }),
 );
 
-createTasksApi(app);
-createTasksEventsApi(app);
-createStepperDemoApi(app);
-createTaskApi(app);
+app.use("/api", tasksRouter);
+app.use("/api", taskEventsRouter);
+app.use("/api", taskRouter);
 
 function onServerStart() {
   main();
   console.log("server start");
 }
 app.listen(3001, onServerStart);
-
-// import("./scratch").then((module) => module());

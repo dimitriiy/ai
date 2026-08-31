@@ -1,15 +1,15 @@
-import { Application } from "express";
-import { db } from "../db";
-import type { Task } from "../types";
-import { listTasks, rowToTask } from "../state";
+import express from "express";
+import { listTasks } from "../state";
 import { readEvents } from "../events";
-import { projectStages, projectTask } from "../projection";
+import { projectTask } from "../projection";
 
-export const createTaskApi = (app: Application) => {
-  app.get("/api/tasks", (_req, res) => {
-    const tasks = listTasks().map((t) =>
-      projectTask(t, readEvents(t.id), false),
-    );
-    res.json(tasks);
-  });
-};
+const router = express.Router();
+
+router.get("/tasks", (_req, res) => {
+  const tasks = listTasks().map((t) =>
+    projectTask(t, readEvents(t.id), false),
+  );
+  res.json(tasks);
+});
+
+export default router;
