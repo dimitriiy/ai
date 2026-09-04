@@ -15,6 +15,7 @@
 
 - React 19 + Vite 7
 - Mantine UI 9 + Tabler Icons
+- TanStack Query 5 (data fetching + caching)
 - TypeScript 7
 
 **Architecture:**
@@ -81,6 +82,10 @@
 - [ ] `yarn dev:worker` runs worker separately (if needed)
 - [ ] Frontend `yarn dev` proxies API to localhost:3001
 - [ ] `.env` variables documented in `.env.example`
+
+## Ignored Directories
+
+- `foundry/` — old version, do not read or reference
 
 ## Key Files
 

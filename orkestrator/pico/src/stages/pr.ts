@@ -8,7 +8,7 @@ export interface PrResult {
 }
 
 export async function run(task: Task, report: string): Promise<PrResult> {
-  await delay(3000); // 0-1s
+  await delay(5000); // 0-1s
 
   const mockPrNumber = Math.floor(Math.random() * 9000) + 1000;
 

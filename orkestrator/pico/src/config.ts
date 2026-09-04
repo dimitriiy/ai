@@ -11,7 +11,7 @@ function required(name: string): string {
 export const config = {
   githubToken: required("GITHUB_TOKEN"),
   repo: required("GITHUB_REPO"),
-  anthropicKey: required("ANTHROPIC_API_KEY"),
+  // anthropicKey: required("ANTHROPIC_API_KEY"),
 
   issueLabel: process.env.ISSUE_LABEL ?? "pico-task",
   baseBranch: process.env.BASE_BRANCH ?? "main",

@@ -1,6 +1,6 @@
 import type { Task } from "../types";
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface PlanResult {
   text: string;
@@ -8,11 +8,12 @@ export interface PlanResult {
 }
 
 export async function run(task: Task): Promise<PlanResult> {
-  await delay(Math.random() * 1500); // 0-1.5s
-  
-  const isComplex = task.issueTitle.toLowerCase().includes("complex") || 
-                   task.issueTitle.toLowerCase().includes("refactor");
-  
+  await delay(3500); // 0-1.5s
+
+  const isComplex =
+    task.issueTitle.toLowerCase().includes("complex") ||
+    task.issueTitle.toLowerCase().includes("refactor");
+
   return {
     text: `Mock plan for: ${task.issueTitle}
     
@@ -24,4 +25,4 @@ export async function run(task: Task): Promise<PlanResult> {
 Estimated complexity: ${isComplex ? "High" : "Medium"}`,
     needsHuman: isComplex,
   };
-};
+}

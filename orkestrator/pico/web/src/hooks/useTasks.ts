@@ -1,35 +1,23 @@
-import { useEffect, useState } from 'react'
-import { getTasks, type Task } from '../api'
+import { useQuery } from '@tanstack/react-query'
+import { getTasks } from '../api'
+import type { TaskView } from '@/types'
 
 interface State {
-  tasks: Task[]
+  tasks: TaskView[]
   loading: boolean
   error: Error | null
 }
 
 export function useTasks(): State {
-  const [state, setState] = useState<State>({
-    tasks: [],
-    loading: true,
-    error: null,
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: getTasks,
+    refetchInterval: 3000,
   })
 
-  useEffect(() => {
-    let active = true
-    setState((s) => ({ ...s, loading: true, error: null }))
-
-    getTasks()
-      .then((tasks) => {
-        if (active) setState({ tasks, loading: false, error: null })
-      })
-      .catch((error: Error) => {
-        if (active) setState({ tasks: [], loading: false, error })
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
-
-  return state
+  return {
+    tasks: data ?? [],
+    loading: isLoading,
+    error: error as Error | null,
+  }
 }

@@ -111,8 +111,8 @@ export function updateTask(id: number, patch: Partial<Task>): Task {
 export function saveStageResult(
   taskId: number,
   stage: Stage,
-  output: unknown, // что вернула стадия; уедет в базу через JSON.stringify
-  attempt = 0, // номер попытки; по умолчанию 0
+  output: unknown,
+  attempt = 0,
 ) {
   db.prepare(
     `INSERT OR REPLACE INTO stage_results (task_id, stage, attempt, output_json, created_at)
@@ -135,7 +135,27 @@ export function getStageResult<T>(
     .prepare(
       `SELECT * from  stage_results WHERE task_id = ? and stage = ? and attempt = ?`,
     )
-    .get(taskId, stage, attempt);
+    .get(taskId, stage, attempt) as { output_json: string } | undefined;
 
   return row ? (JSON.parse(row.output_json) as T) : null;
+}
+
+export function getSession(taskId: number, stage: string): string | null {
+  const row = db
+    .prepare(
+      "SELECT session_id FROM agent_sessions WHERE task_id = ? AND stage = ?",
+    )
+    .get(taskId, stage) as { session_id: string } | undefined;
+  return row?.session_id ?? null;
+}
+
+export function saveSession(
+  taskId: number,
+  stage: string,
+  sessionId: string,
+): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO agent_sessions (task_id, stage, session_id)
+     VALUES (?, ?, ?)`,
+  ).run(taskId, stage, sessionId);
 }

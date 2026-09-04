@@ -1,55 +1,44 @@
-import { Tabs, Badge, rem } from '@mantine/core';
+import { Badge, Tabs } from '@mantine/core'
+import type { TaskFilter } from '@/lib/filters'
+import { TASK_FILTERS } from '@/lib/filters'
 
 interface TaskFiltersProps {
-  activeTab: string;
-  onChange: (value: string) => void;
+  value: TaskFilter
+  onChange: (value: TaskFilter) => void
+  counts: Record<TaskFilter, number>
 }
 
-export function TaskFilters({ activeTab, onChange }: TaskFiltersProps) {
+export function TaskFilters({ value, onChange, counts }: TaskFiltersProps) {
   return (
-    <Tabs value={activeTab} onChange={(value) => onChange(value || 'all')} variant="pills">
+    <Tabs
+      value={value}
+      onChange={(next) => onChange((next as TaskFilter) ?? 'all')}
+      variant="pills"
+    >
       <Tabs.List>
-        <Tabs.Tab 
-          value="all" 
-          rightSection={
-            <Badge size="sm" variant="filled" color="gray" circle>
-              2
-            </Badge>
-          }
-        >
-          Все
-        </Tabs.Tab>
-        <Tabs.Tab 
-          value="active"
-          rightSection={
-            <Badge size="sm" variant="filled" color="gray" circle>
-              0
-            </Badge>
-          }
-        >
-          Активные
-        </Tabs.Tab>
-        <Tabs.Tab 
-          value="success"
-          rightSection={
-            <Badge size="sm" variant="filled" color="gray" circle>
-              2
-            </Badge>
-          }
-        >
-          Успешные
-        </Tabs.Tab>
-        <Tabs.Tab 
-          value="failed"
-          rightSection={
-            <Badge size="sm" variant="filled" color="gray" circle>
-              0
-            </Badge>
-          }
-        >
-          Упавшие
-        </Tabs.Tab>
+        {TASK_FILTERS.map((filter) => (
+          <Tabs.Tab
+            key={filter.value}
+            value={filter.value}
+            rightSection={
+              <Badge
+                size="sm"
+                variant="filled"
+                color={
+                  filter.value === 'blocked' && counts.blocked > 0
+                    ? 'orange'
+                    : 'gray'
+                }
+                circle
+              >
+                {counts[filter.value]}
+              </Badge>
+            }
+          >
+            {filter.label}
+          </Tabs.Tab>
+        ))}
       </Tabs.List>
     </Tabs>
-  );
+  )
 }

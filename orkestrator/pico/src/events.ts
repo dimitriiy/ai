@@ -1,16 +1,5 @@
-// src/events.ts: recordEvent(taskId, stage, kind, payload) — выдаёт seq как MAX+1 с повтором при конфликте;
-//  readEvents(taskId, afterSeq?) — читает по возрастанию seq.
-// Там же — withStage(taskId, stage, fn): пишет stage_started, выполняет fn, пишет stage_finished с durationMs и результатом.
-// Если fn бросил — пишет stage_failed с текстом ошибки и пробрасывает исключение дальше.
-// Последнее важно: обёртка логирует, но не проглатывает. Решение о том, что делать с ошибкой, принимает оркестратор.
-
-import { stringify } from "querystring";
 import { db } from "./db";
 import type { EventKind, Stage, Task } from "./types";
-
-// Внутри recordEvent: seq вычисляется как MAX(seq) + 1 среди событий этой задачи,
-//  и вставка идёт в цикле — поймал нарушение UNIQUE, перечитал максимум, попробовал снова.
-//  payload уходит в базу через JSON.stringify, а readEvents возвращает его уже распакованным объектом, не строкой.
 
 export const recordEvent = (
   taskId: Task["id"],
@@ -66,24 +55,6 @@ export const readEvents = (taskId: number, afterSeq = 0) => {
     payload: JSON.parse(r.payload) as Record<string, unknown>,
   }));
 };
-
-// Там же — обёртка стадии:
-// export async function withStage<T>(
-//   taskId: number,
-//   stage: Stage,
-//   fn: () => Promise<T>,               // тело стадии
-//   input?: Record<string, unknown>,     // попадёт в payload события stage_started
-// ): Promise<T>;                         // ровно то, что вернул fn
-// Порядок действий: пишем stage_started с
-//  { input } → засекаем время → выполняем fn → пишем stage_finished
-//  с { durationMs, output } → возвращаем результат. Если fn бросил —
-//  вместо этого stage_failed с { durationMs, error }, где error — текст сообщения, и исключение летит дальше.
-
-// Дженерик <T> тут не украшение: он делает обёртку прозрачной по типам.
-
-// withStage(1, "plan", async () => ({ text: "..." })) вернёт { text: string }, а не unknown, и вызывающий код ничего не потеряет.
-
-// Последнее важно: обёртка логирует, но не проглатывает. Решение о том, что делать с ошибкой, принимает оркестратор.
 
 export const withStage = async <T>(
   taskId: number,

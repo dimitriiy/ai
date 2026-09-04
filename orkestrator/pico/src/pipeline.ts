@@ -8,6 +8,7 @@ import { recordEvent, withStage } from "./events";
 import { getStageResult, saveStageResult, updateTask } from "./state";
 import { ImplementResult } from "./stages/implement";
 import { config } from "./config";
+import { createWorktree } from "./worktree";
 
 const STAGES = ["fetch", "plan", "implement", "verify", "pr"] as const;
 type Stage = (typeof STAGES)[number];
@@ -15,10 +16,18 @@ type Stage = (typeof STAGES)[number];
 const PRE_IMPLEMENT: Stage[] = ["fetch", "plan"];
 
 export async function runTask(task: Task): Promise<void> {
-  let current = task.stage;
+  let current: Stage = task.stage as Stage;
 
   try {
     await once(task, "fetch", 0, () => fetch.run(task));
+
+    let workdir = task.worktreePath;
+
+    if (!workdir) {
+      const wt = await createWorktree(task.id);
+
+      updateTask(task.id, { worktreePath: wt.path });
+    }
 
     current = "plan";
     const planResult = await once(task, "plan", 0, () => plan.run(task));

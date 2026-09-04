@@ -2,10 +2,9 @@ import "./db";
 
 import cors from "cors";
 import express from "express";
-import taskRouter from "./api/task";
 import tasksRouter from "./api/tasks";
-import taskEventsRouter from "./api/task_events";
-import { main } from "./scratch";
+import fetchRouter from "./api/fetch";
+import worktreeRouter from "./api/worktree";
 
 const app = express();
 
@@ -17,11 +16,10 @@ app.use(
 );
 
 app.use("/api", tasksRouter);
-app.use("/api", taskEventsRouter);
-app.use("/api", taskRouter);
+app.use("/api", fetchRouter);
+app.use("/api", worktreeRouter);
 
 function onServerStart() {
-  main();
   console.log("server start");
 }
 app.listen(3001, onServerStart);

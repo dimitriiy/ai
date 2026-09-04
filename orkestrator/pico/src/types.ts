@@ -15,6 +15,7 @@ export type EventKind =
   | "stage_finished"
   | "stage_failed"
   | "agent_text"
+  | "agent_tool"
   | "blocked";
 
 export interface Task {
