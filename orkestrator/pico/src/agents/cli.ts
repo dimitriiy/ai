@@ -65,7 +65,7 @@ export class CliAgent implements CodingAgent {
     if (resumeId) args.push("--resume", resumeId);
 
     const child = spawn("claude", args, {
-      cwd: process.cwd(),
+      cwd: worktree,
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -80,11 +80,17 @@ export class CliAgent implements CodingAgent {
       crlfDelay: Infinity,
     });
 
+    let modelName: string | null = null;
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalCostUsd = 0;
+    let cacheCreationTokens = 0;
+    let cacheReadTokens = 0;
+
     let sessionId: string | null = null;
     let response = "";
 
     for await (const line of lines) {
-      console.log(line);
       if (!line.trim()) continue;
 
       let event: CliEvent;
@@ -100,6 +106,18 @@ export class CliAgent implements CodingAgent {
       }
 
       if (event.type === "assistant") {
+        const usage = event.message.usage;
+        if (usage) {
+          totalInputTokens += usage.input_tokens ?? 0;
+          totalOutputTokens += usage.output_tokens ?? 0;
+          cacheCreationTokens += usage.cache_creation_input_tokens ?? 0;
+          cacheReadTokens += usage.cache_read_input_tokens ?? 0;
+        }
+
+        if (!modelName && event.message.model) {
+          modelName = event.message.model;
+        }
+
         for (const block of event.message.content) {
           if (block.type === "tool_use") {
             recordEvent(task.id, stage, "agent_tool", {
@@ -118,21 +136,44 @@ export class CliAgent implements CodingAgent {
 
       if (event.type === "result" && typeof event.result === "string") {
         response = event.result;
+
+        if (event.total_cost_usd !== undefined) {
+          totalCostUsd = event.total_cost_usd;
+        }
+
+        if (event.usage) {
+          // result.usage — это суммарный usage за все turns
+          totalInputTokens = event.usage.input_tokens ?? totalInputTokens;
+          totalOutputTokens = event.usage.output_tokens ?? totalOutputTokens;
+          cacheCreationTokens =
+            event.usage.cache_creation_input_tokens ?? cacheCreationTokens;
+          cacheReadTokens =
+            event.usage.cache_read_input_tokens ?? cacheReadTokens;
+        }
       }
-      console.log(event);
     }
 
     const code: number = await new Promise((resolve) =>
       child.on("close", (c) => resolve(c ?? 0)),
     );
 
+    console.log("code", code);
     if (code !== 0) {
       throw new Error(`claude exited with ${code}: ${stderr.slice(-500)}`);
     }
 
     if (sessionId) saveSession(task.id, stage, sessionId);
 
-    return { response, sessionId };
+    return {
+      response,
+      sessionId,
+      meta: {
+        modelName: modelName ?? undefined,
+        totalInputTokens,
+        totalOutputTokens,
+        totalCostUsd,
+      },
+    };
   }
 }
 

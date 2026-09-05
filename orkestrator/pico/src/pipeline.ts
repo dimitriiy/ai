@@ -1,36 +1,46 @@
 import { Task } from "./types";
 import * as fetch from "./stages/fetch";
 import * as plan from "./stages/plan";
+import * as context from "./stages/context";
+
 import * as implement from "./stages/implement";
 import * as verify from "./stages/verify";
 import * as pr from "./stages/pr";
 import { recordEvent, withStage } from "./events";
 import { getStageResult, saveStageResult, updateTask } from "./state";
-import { ImplementResult } from "./stages/implement";
 import { config } from "./config";
-import { createWorktree } from "./worktree";
+import { createWorktree, removeWorktree } from "./worktree";
 
-const STAGES = ["fetch", "plan", "implement", "verify", "pr"] as const;
+const STAGES = [
+  "fetch",
+  "context",
+  "plan",
+  "implement",
+  "verify",
+  "pr",
+] as const;
 type Stage = (typeof STAGES)[number];
 
-const PRE_IMPLEMENT: Stage[] = ["fetch", "plan"];
+const PRE_IMPLEMENT: Stage[] = ["fetch", "context", "plan"];
 
-export async function runTask(task: Task): Promise<void> {
+export async function runTask(taskInput: Task): Promise<void> {
+  let task = taskInput;
   let current: Stage = task.stage as Stage;
 
   try {
     await once(task, "fetch", 0, () => fetch.run(task));
 
-    let workdir = task.worktreePath;
-
-    if (!workdir) {
+    if (!task.worktreePath) {
       const wt = await createWorktree(task.id);
-
-      updateTask(task.id, { worktreePath: wt.path });
+      updateTask(task.id, { worktreePath: wt.path, branch: wt.branch });
+      task = { ...task, worktreePath: wt.path, branch: wt.branch };
     }
+    current = "context";
+
+    const ctx = await once(task, "context", 0, () => context.run(task));
 
     current = "plan";
-    const planResult = await once(task, "plan", 0, () => plan.run(task));
+    const planResult = await once(task, "plan", 0, () => plan.run(task, ctx));
 
     if (planResult.needsHuman) {
       recordEvent(task.id, "plan", "blocked", { questions: planResult.text });
@@ -43,7 +53,12 @@ export async function runTask(task: Task): Promise<void> {
     for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
       current = "implement";
       const implementResult = await once(task, "implement", attempt, () =>
-        implement.run(task, planResult.text),
+        implement.run(
+          task,
+          task.worktreePath!,
+          planResult.text,
+          verification.report,
+        ),
       );
 
       current = "verify";
@@ -65,10 +80,11 @@ export async function runTask(task: Task): Promise<void> {
     current = "pr";
 
     const prData = await once(task, "pr", 0, () =>
-      pr.run(task, verification.report),
+      pr.run(task, task.worktreePath!, task.branch!, verification.report),
     );
 
     updateTask(task.id, { stage: "done", status: "done", prUrl: prData.url });
+    await removeWorktree(task.worktreePath!);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
 
@@ -79,7 +95,7 @@ export async function runTask(task: Task): Promise<void> {
       updateTask(task.id, { stage: current, status: "failed" });
     }
 
-    console.error(`task ${task.id} stopped at ${current}: ${message}`);
+    console.error(`task ${task.id} stopped at ${current}: ${message}`, err);
   }
 }
 

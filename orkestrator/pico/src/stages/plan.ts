@@ -1,28 +1,46 @@
+import { callAgent } from "../agent";
 import type { Task } from "../types";
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import type { ContextResult } from "./context";
 
 export interface PlanResult {
   text: string;
   needsHuman: boolean;
 }
 
-export async function run(task: Task): Promise<PlanResult> {
-  await delay(3500); // 0-1.5s
+// run собирает контекст через buildContext,
+//  зовёт callAgent("plan", task, context) и возвращает текст вместе с флагом.
 
-  const isComplex =
-    task.issueTitle.toLowerCase().includes("complex") ||
-    task.issueTitle.toLowerCase().includes("refactor");
+export async function run(
+  task: Task,
+  context: ContextResult,
+): Promise<PlanResult> {
+  if (!task.worktreePath) {
+    throw new Error("task.worktreePath is not defined in plan ");
+  }
 
-  return {
-    text: `Mock plan for: ${task.issueTitle}
-    
-1. Analyze existing code structure
-2. Implement necessary changes
-3. Add tests
-4. Update documentation
-    
-Estimated complexity: ${isComplex ? "High" : "Medium"}`,
-    needsHuman: isComplex,
-  };
+  const response = await callAgent(
+    "plan",
+    task,
+    task.worktreePath,
+    JSON.stringify(context),
+  );
+
+  console.log("response", response);
+
+  return { text: stripMarker(response), needsHuman: needsHuman(response) };
+}
+
+/** true, если ПОСЛЕДНЯЯ непустая строка — это маркер. */
+export function needsHuman(text: string): boolean {
+  const last = text.split("\n").filter((l) => l.trim()).at(-1) ?? "";
+  return /NEED_HUMAN/.test(last);
+}
+
+/** Тот же текст без строки-маркера — его и показываем человеку. */
+export function stripMarker(text: string): string {
+  return text
+    .split("\n")
+    .filter((l) => !/NEED_HUMAN/i.test(l.trim()))
+    .join("\n")
+    .trimEnd();
 }

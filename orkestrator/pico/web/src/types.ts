@@ -1,5 +1,6 @@
 export type Stage =
   | 'fetch'
+  | 'context'
   | 'plan'
   | 'implement'
   | 'verify'
@@ -56,10 +57,11 @@ export interface TaskView extends Task {
 }
 
 /** Порядок стадий — зеркалит PIPELINE из src/types.ts на бэке. */
-export const PIPELINE: Stage[] = ['fetch', 'plan', 'implement', 'verify', 'pr']
+export const PIPELINE: Stage[] = ['fetch', 'context', 'plan', 'implement', 'verify', 'pr']
 
 export const STAGE_TITLE: Record<string, string> = {
   fetch: 'Забрать issue',
+  context: 'Собрать контекст',
   plan: 'Спланировать',
   implement: 'Реализовать',
   verify: 'Проверить',

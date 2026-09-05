@@ -5,6 +5,12 @@ export type AgentStage = "plan" | "implement" | "verify";
 export interface AgentResult {
   response: string; // финальный текст агента
   sessionId: string | null; // id сессии CLI; null у stub
+  meta?: {
+    modelName?: string;
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    totalCostUsd: number;
+  };
 }
 
 export interface CodingAgent {

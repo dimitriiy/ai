@@ -1,5 +1,5 @@
 import fs from "fs";
-import { config, repoName, repoOwner } from "./config";
+import { config } from "./config";
 import { run } from "./shell";
 import path from "path";
 import { CliAgent } from "./agents/cli";
@@ -17,7 +17,8 @@ export async function ensureBaseRepo(): Promise<string> {
   fs.mkdirSync(config.worktreeRoot, { recursive: true });
 
   if (!fs.existsSync(basePath)) {
-    const url = `https://github.com/${repoOwner}/${repoName}.git`;
+    const auth = "x-access-token:" + config.githubToken;
+    const url = "https://" + auth + "@github.com/" + config.repo + ".git";
 
     await run("git", ["clone", url, basePath]);
   }

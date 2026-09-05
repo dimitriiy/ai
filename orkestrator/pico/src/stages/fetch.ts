@@ -1,6 +1,6 @@
 import type { Task } from "../types";
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { octokit } from "../github";
+import { repoOwner, repoName } from "../config";
 
 export interface FetchResult {
   issueData: {
@@ -17,21 +17,34 @@ export interface FetchResult {
 }
 
 export async function run(task: Task): Promise<FetchResult> {
-  await delay(5000); // 0-2s
+  const [issueResp, commentsResp] = await Promise.all([
+    octokit.issues.get({
+      owner: repoOwner,
+      repo: repoName,
+      issue_number: task.issueNumber,
+    }),
+    octokit.issues.listComments({
+      owner: repoOwner,
+      repo: repoName,
+      issue_number: task.issueNumber,
+    }),
+  ]);
+
+  const issue = issueResp.data;
 
   return {
     issueData: {
-      title: task.issueTitle || "Mock Issue Title",
-      body: task.issueBody || "Mock issue body content",
-      labels: ["enhancement", "good-first-issue"],
-      author: "mock-user",
+      title: issue.title,
+      body: issue.body ?? "",
+      labels: issue.labels.map((l) =>
+        typeof l === "string" ? l : (l.name ?? ""),
+      ),
+      author: issue.user?.login ?? "unknown",
     },
-    comments: [
-      {
-        author: "reviewer",
-        body: "This looks good to me",
-        createdAt: new Date().toISOString(),
-      },
-    ],
+    comments: commentsResp.data.map((c) => ({
+      author: c.user?.login ?? "unknown",
+      body: c.body ?? "",
+      createdAt: c.created_at,
+    })),
   };
 }

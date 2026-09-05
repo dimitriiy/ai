@@ -1,6 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { config, repoName, repoOwner } from "./config";
-export const octokit = new Octokit();
+export const octokit = new Octokit({ auth: config.githubToken });
 
 export interface IssueSummary {
   number: number;
