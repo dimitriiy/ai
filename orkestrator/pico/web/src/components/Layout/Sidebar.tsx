@@ -3,11 +3,27 @@ import { IconInbox, IconBrandGithub, IconCalendar } from '@tabler/icons-react'
 import { useTasks } from '../../hooks/useTasks'
 import { useRepo } from '../../hooks/useRepo'
 import { countByFilter } from '../../lib/filters'
+import { formatTokens } from '../Tasks/formatDuration'
+import type { TaskView } from '@/types'
+
+/** Суммарный расход токенов по задачам, обновлённым сегодня (локальный день). */
+function todayTokens(tasks: TaskView[]): number {
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const startMs = start.getTime()
+
+  return tasks.reduce((acc, task) => {
+    const updatedMs = new Date(task.updatedAt).getTime()
+    if (!Number.isFinite(updatedMs) || updatedMs < startMs) return acc
+    return acc + task.tokensInTotal + task.tokensOutTotal
+  }, 0)
+}
 
 export function Sidebar() {
   const { tasks } = useTasks()
   const { repo } = useRepo()
   const counts = countByFilter(tasks)
+  const tokens = todayTokens(tasks)
 
   return (
     <Stack
@@ -64,7 +80,7 @@ export function Sidebar() {
         <Paper p="md" withBorder>
           <IconCalendar size={20} style={{ marginBottom: 8 }} />
           <Text size="lg" fw={700}>
-            1491.3k ток.
+            {formatTokens(tokens)} ток.
           </Text>
           <Text size="xs" c="dimmed">
             Расход

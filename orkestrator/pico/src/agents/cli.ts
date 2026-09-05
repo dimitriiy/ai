@@ -35,6 +35,8 @@ export class CliAgent implements CodingAgent {
       "--verbose",
       "--max-turns",
       "20",
+      "--permission-mode",
+      "bypassPermissions",
     ];
     if (resumeId) args.push("--resume", resumeId);
 
