@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { Anchor, Box, Code, Group, ScrollArea, Stack, Text } from '@mantine/core'
+import {
+  Anchor,
+  Box,
+  Code,
+  Group,
+  ScrollArea,
+  Stack,
+  Text,
+} from '@mantine/core'
 import {
   IconAlertTriangle,
   IconHandStop,
@@ -123,7 +131,9 @@ function EventRow({ event }: { event: TaskEvent }) {
     return (
       <Row
         tsMs={event.tsMs}
-        icon={<IconAlertTriangle size={13} color="var(--mantine-color-red-5)" />}
+        icon={
+          <IconAlertTriangle size={13} color="var(--mantine-color-red-5)" />
+        }
       >
         <Text size="xs" fw={600} c="red" mb={2}>
           Стадия упала

@@ -56,6 +56,21 @@ export const readEvents = (taskId: number, afterSeq = 0) => {
   }));
 };
 
+interface AgentMetaLike {
+  modelName?: string;
+  totalCostUsd?: number;
+  totalInputTokens?: number;
+  totalOutputTokens?: number;
+}
+
+/** Достаёт `agentMeta`, если результат стадии его несёт (plan/implement). */
+function extractAgentMeta(output: unknown): AgentMetaLike | undefined {
+  if (output && typeof output === "object" && "agentMeta" in output) {
+    return (output as { agentMeta?: AgentMetaLike }).agentMeta;
+  }
+  return undefined;
+}
+
 export const withStage = async <T>(
   taskId: number,
   stage: Stage,
@@ -70,8 +85,16 @@ export const withStage = async <T>(
     const output = await fn();
 
     const durationMs = Date.now() - startedAt;
+    const agentMeta = extractAgentMeta(output);
 
-    recordEvent(taskId, stage, "stage_finished", { durationMs, output });
+    recordEvent(taskId, stage, "stage_finished", {
+      durationMs,
+      output,
+      modelName: agentMeta?.modelName,
+      costUsd: agentMeta?.totalCostUsd,
+      tokensIn: agentMeta?.totalInputTokens,
+      tokensOut: agentMeta?.totalOutputTokens,
+    });
 
     return output;
   } catch (err) {

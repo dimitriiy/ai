@@ -1,7 +1,14 @@
 import { Badge, Box, NavLink, Paper, Stack, Text } from '@mantine/core'
 import { IconInbox, IconBrandGithub, IconCalendar } from '@tabler/icons-react'
+import { useTasks } from '../../hooks/useTasks'
+import { useRepo } from '../../hooks/useRepo'
+import { countByFilter } from '../../lib/filters'
 
 export function Sidebar() {
+  const { tasks } = useTasks()
+  const { repo } = useRepo()
+  const counts = countByFilter(tasks)
+
   return (
     <Stack
       gap="lg"
@@ -26,7 +33,7 @@ export function Sidebar() {
           leftSection={<IconInbox size={20} />}
           rightSection={
             <Badge size="sm" variant="filled" color="gray">
-              2
+              {counts.all}
             </Badge>
           }
           active
@@ -39,11 +46,11 @@ export function Sidebar() {
           Репозитории
         </Text>
         <NavLink
-          label="the-foundry"
+          label={repo?.name ?? '…'}
           leftSection={<IconBrandGithub size={20} />}
           rightSection={
             <Badge size="sm" variant="filled" color="gray">
-              2
+              {counts.all}
             </Badge>
           }
         />

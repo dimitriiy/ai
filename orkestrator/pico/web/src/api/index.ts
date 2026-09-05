@@ -38,7 +38,15 @@ export const syncIssues = async (): Promise<{ synced: number }> => {
   return res.json()
 }
 
-export const worktreeTest = async (): Promise<void> => {
-  const res = await fetch('/api/worktree-test', { method: 'POST' })
-  if (!res.ok) throw new Error(`worktreeTest failed: ${res.status}`)
+export interface RepoInfo {
+  owner: string
+  name: string
+  fullName: string
+}
+
+export const getRepo = async (): Promise<RepoInfo> => {
+  const res = await fetch('/api/repo')
+  if (!res.ok) throw new Error(`getRepo failed: ${res.status}`)
+
+  return res.json()
 }

@@ -1,10 +1,12 @@
 import { callAgent } from "../agent";
+import type { AgentMeta } from "../agent";
 import type { Task } from "../types";
 import type { ContextResult } from "./context";
 
 export interface PlanResult {
   text: string;
   needsHuman: boolean;
+  agentMeta?: AgentMeta;
 }
 
 // run собирает контекст через buildContext,
@@ -18,21 +20,27 @@ export async function run(
     throw new Error("task.worktreePath is not defined in plan ");
   }
 
-  const response = await callAgent(
+  const { response, meta } = await callAgent(
     "plan",
     task,
     task.worktreePath,
     JSON.stringify(context),
   );
 
-  console.log("response", response);
-
-  return { text: stripMarker(response), needsHuman: needsHuman(response) };
+  return {
+    text: stripMarker(response),
+    needsHuman: needsHuman(response),
+    agentMeta: meta,
+  };
 }
 
 /** true, если ПОСЛЕДНЯЯ непустая строка — это маркер. */
 export function needsHuman(text: string): boolean {
-  const last = text.split("\n").filter((l) => l.trim()).at(-1) ?? "";
+  const last =
+    text
+      .split("\n")
+      .filter((l) => l.trim())
+      .at(-1) ?? "";
   return /NEED_HUMAN/.test(last);
 }
 

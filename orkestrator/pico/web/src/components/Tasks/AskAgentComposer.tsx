@@ -34,7 +34,15 @@ export function AskAgentComposer({ agent, stageLabel }: Props) {
         }}
       >
         <IconBulb size={13} color="var(--mantine-color-violet-4)" />
-        <Text size="xs" fw={600} tt="uppercase" style={{ letterSpacing: '.06em', color: 'var(--mantine-color-dimmed)' }}>
+        <Text
+          size="xs"
+          fw={600}
+          tt="uppercase"
+          style={{
+            letterSpacing: '.06em',
+            color: 'var(--mantine-color-dimmed)',
+          }}
+        >
           Спросить у агента
         </Text>
         <span style={{ flex: 1 }} />
@@ -80,8 +88,15 @@ export function AskAgentComposer({ agent, stageLabel }: Props) {
                 },
               }}
             />
-            <Group justify="space-between" mt={8} pt={8} style={{ borderTop: '1px solid var(--mantine-color-dark-4)' }}>
-              <Text size="xs" c="dimmed">⌘+Enter — отправить</Text>
+            <Group
+              justify="space-between"
+              mt={8}
+              pt={8}
+              style={{ borderTop: '1px solid var(--mantine-color-dark-4)' }}
+            >
+              <Text size="xs" c="dimmed">
+                ⌘+Enter — отправить
+              </Text>
               <Box
                 component="button"
                 type="button"

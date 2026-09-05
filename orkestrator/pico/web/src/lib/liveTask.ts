@@ -23,14 +23,15 @@ function num(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+function str(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null
+}
+
 /**
  * Пересобирает stages из событий. Порядок ровно как в projectStages на бэке,
  * чтобы снапшот и живая проекция не расходились: failed > finished > started.
  */
-export function projectLiveTask(
-  task: TaskView,
-  events: TaskEvent[],
-): TaskView {
+export function projectLiveTask(task: TaskView, events: TaskEvent[]): TaskView {
   if (events.length === 0) return task
 
   const byStage = new Map<string, StageView>()
@@ -38,7 +39,15 @@ export function projectLiveTask(
 
   for (const stage of PIPELINE) {
     if (!byStage.has(stage)) {
-      byStage.set(stage, { stage, status: 'pending', durationMs: null })
+      byStage.set(stage, {
+        stage,
+        status: 'pending',
+        durationMs: null,
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        modelName: null,
+      })
     }
   }
 
@@ -55,6 +64,7 @@ export function projectLiveTask(
     if (event.kind === 'stage_finished') {
       view.status = 'done'
       view.durationMs = num(event.payload.durationMs) ?? view.durationMs
+      view.modelName = str(event.payload.modelName) ?? view.modelName
     }
 
     if (event.kind === 'stage_failed') {
@@ -67,7 +77,15 @@ export function projectLiveTask(
 
   const stages = PIPELINE.map(
     (stage) =>
-      byStage.get(stage) ?? { stage, status: 'pending' as const, durationMs: null },
+      byStage.get(stage) ?? {
+        stage,
+        status: 'pending' as const,
+        durationMs: null,
+        costUsd: null,
+        tokensIn: null,
+        tokensOut: null,
+        modelName: null,
+      },
   )
 
   const running = stages.find((s) => s.status === 'running')
@@ -87,7 +105,12 @@ export function projectLiveTask(
     currentStage = running.stage
   }
 
-  return { ...task, status, stage: currentStage, stages, events }
+  // Модель задачи — последняя известная по стадиям (та, что реально работала
+  // последней); падать обратно на снапшот, если поток ещё ничего не принёс.
+  const modelName =
+    [...stages].reverse().find((s) => s.modelName)?.modelName ?? task.modelName
+
+  return { ...task, status, stage: currentStage, stages, events, modelName }
 }
 
 /** Достаёт вход/выход/ошибку конкретной стадии из ленты событий. */

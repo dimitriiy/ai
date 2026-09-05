@@ -23,7 +23,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { TaskStatus, TaskView } from '@/types'
 import { runTask } from '@/api'
 import { projectLiveTask } from '@/lib/liveTask'
-import { taskTokens } from '@/lib/mock'
 import { useTaskStream } from '@/hooks/useTaskStream'
 import { PipelineStages } from './PipelineStages'
 import { TaskView as TaskViewPanel } from './TaskView'
@@ -69,7 +68,7 @@ export function TaskRow({ task: snapshot }: TaskRowProps) {
   })
 
   const canRun = task.status === 'pending' || task.status === 'failed'
-  const tokens = taskTokens(task)
+  const tokens = task.tokensInTotal + task.tokensOutTotal
 
   return (
     <>

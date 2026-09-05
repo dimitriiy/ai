@@ -1,37 +1,11 @@
 import { spawn } from "child_process";
 import type { Task } from "../types";
 import type { AgentResult, AgentStage, CodingAgent } from "./types";
-import {
-  getSession,
-  saveSession,
-  saveSession,
-  saveSession,
-  saveSession,
-} from "../state";
+import { saveSession } from "../state";
 import readline from "readline";
 
 import "dotenv/config";
 import { recordEvent } from "../events";
-import console from "console";
-import { response } from "express";
-
-function agentEnv(): NodeJS.ProcessEnv {
-  const ALLOW = new Set([
-    "PATH",
-    "HOME",
-    "USER",
-    "LOGNAME",
-    "SHELL",
-    "TERM",
-    "LANG",
-    "LC_ALL",
-    "TMPDIR",
-    "ANTHROPIC_API_KEY",
-  ]);
-  return Object.fromEntries(
-    Object.entries(process.env).filter(([k]) => ALLOW.has(k)),
-  );
-}
 
 function toolDetail(input: Record<string, unknown> | undefined): string {
   if (!input) return "";
@@ -157,7 +131,6 @@ export class CliAgent implements CodingAgent {
       child.on("close", (c) => resolve(c ?? 0)),
     );
 
-    console.log("code", code);
     if (code !== 0) {
       throw new Error(`claude exited with ${code}: ${stderr.slice(-500)}`);
     }

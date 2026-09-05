@@ -55,12 +55,17 @@ export function PipelineStages({
           outlineOffset: 2,
           zIndex: 2,
           ...(isRunning
-            ? ({ '--pulse-color': 'var(--mantine-color-yellow-4)' } as CSSProperties)
+            ? ({
+                '--pulse-color': 'var(--mantine-color-yellow-4)',
+              } as CSSProperties)
             : {}),
         }
 
         const dot = (
-          <Box className={isRunning ? styles.running : undefined} style={dotStyle}>
+          <Box
+            className={isRunning ? styles.running : undefined}
+            style={dotStyle}
+          >
             {stage.status === 'done' && (
               <IconCheck size={dims.icon} color="white" stroke={3} />
             )}

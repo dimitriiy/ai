@@ -105,7 +105,6 @@ async function once<T>(
   attempt: number,
   fn: () => Promise<T>,
 ): Promise<T> {
-  console.log("RUN stage= ", stage);
   const cache = await getStageResult(task.id, stage, attempt);
 
   if (cache) {

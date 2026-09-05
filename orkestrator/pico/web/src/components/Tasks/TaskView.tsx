@@ -4,6 +4,7 @@
 // Используется вместо TaskExpandedContent.
 
 import { useState } from 'react'
+import * as React from 'react'
 import {
   Alert,
   Anchor,
@@ -41,7 +42,7 @@ import type { Stage, StageView, TaskEvent, TaskView } from '@/types'
 import { PIPELINE, STAGE_TITLE } from '@/types'
 import { resumeTask } from '@/api'
 import { defaultStage, stageDetail } from '@/lib/liveTask'
-import { stageAgent, stageTokens, taskTokens, tokensToUsd, MOCK_REPO, issueUrl } from '@/lib/mock'
+import { MOCK_REPO, issueUrl } from '@/lib/mock'
 import { formatDuration, formatTokens, formatUsd } from './formatDuration'
 import { getStatusColor } from './statusColor'
 
@@ -69,7 +70,7 @@ interface StepperProps {
   onSelect: (s: Stage) => void
 }
 
-const DOT = 16  // px diameter for lg variant
+const DOT = 16 // px diameter for lg variant
 
 function StageStepper({ stages, selected, onSelect }: StepperProps) {
   const byStage = new Map(stages.map((s) => [s.stage, s]))
@@ -80,7 +81,14 @@ function StageStepper({ stages, selected, onSelect }: StepperProps) {
   return (
     <Box style={{ display: 'flex', alignItems: 'center', overflowX: 'auto' }}>
       {PIPELINE.map((stage, idx) => {
-        const s = byStage.get(stage) ?? { stage, status: 'pending' as const, durationMs: null }
+        const s = byStage.get(stage) ?? {
+          stage,
+          status: 'pending' as const,
+          durationMs: null,
+          costUsd: null,
+          tokensIn: null,
+          tokensOut: null,
+        }
         const isDone = s.status === 'done'
         const isRunning = s.status === 'running'
         const isFailed = s.status === 'failed'
@@ -107,10 +115,7 @@ function StageStepper({ stages, selected, onSelect }: StepperProps) {
               : 'var(--mantine-color-dimmed)'
 
         return (
-          <Box
-            key={stage}
-            style={{ display: 'flex', alignItems: 'center' }}
-          >
+          <Box key={stage} style={{ display: 'flex', alignItems: 'center' }}>
             {/* dot column — paddingBottom reserves space for the absolute label
                 so the connector (which shares the same flex row) can use the
                 same marginBottom to stay horizontally aligned with dot centres */}
@@ -128,7 +133,10 @@ function StageStepper({ stages, selected, onSelect }: StepperProps) {
                 tabIndex={0}
                 onClick={() => onSelect(stage)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(stage) }
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onSelect(stage)
+                  }
                 }}
                 style={{
                   width: DOT,
@@ -139,11 +147,17 @@ function StageStepper({ stages, selected, onSelect }: StepperProps) {
                   placeItems: 'center',
                   cursor: 'pointer',
                   flexShrink: 0,
-                  outline: isSelected ? '2px solid var(--mantine-color-violet-4)' : 'none',
+                  outline: isSelected
+                    ? '2px solid var(--mantine-color-violet-4)'
+                    : 'none',
                   outlineOffset: 2,
-                  animation: isRunning ? 'pico-pulse 1.4s ease-in-out infinite' : 'none',
+                  animation: isRunning
+                    ? 'pico-pulse 1.4s ease-in-out infinite'
+                    : 'none',
                   transition: 'outline-color .15s',
-                  boxShadow: isRunning ? '0 0 0 3px var(--mantine-color-yellow-9)' : 'none',
+                  boxShadow: isRunning
+                    ? '0 0 0 3px var(--mantine-color-yellow-9)'
+                    : 'none',
                 }}
               >
                 {isDone && <IconCheck size={8} color="#fff" stroke={3} />}
@@ -198,7 +212,12 @@ function KVList({ items }: { items: [string, string][] }) {
     <Box>
       <Box
         component="dl"
-        style={{ margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 12px' }}
+        style={{
+          margin: 0,
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr',
+          gap: '4px 12px',
+        }}
       >
         {items.map(([k, v], i) => (
           <Box key={`${i}-${k}`} style={{ display: 'contents' }}>
@@ -250,7 +269,14 @@ function TextBlock({ text, label }: { text: string; label?: string }) {
   return (
     <Box>
       {label && (
-        <Text size="xs" c="dimmed" tt="uppercase" fw={600} mb={4} style={{ letterSpacing: '.06em', fontSize: 10 }}>
+        <Text
+          size="xs"
+          c="dimmed"
+          tt="uppercase"
+          fw={600}
+          mb={4}
+          style={{ letterSpacing: '.06em', fontSize: 10 }}
+        >
           {label}
         </Text>
       )}
@@ -288,7 +314,11 @@ function TextBlock({ text, label }: { text: string; label?: string }) {
 
 function StageIORenderer({ data }: { data: unknown }) {
   if (!data) {
-    return <Text size="xs" c="dimmed">нет данных</Text>
+    return (
+      <Text size="xs" c="dimmed">
+        нет данных
+      </Text>
+    )
   }
 
   if (typeof data === 'string') {
@@ -313,20 +343,32 @@ function StageIORenderer({ data }: { data: unknown }) {
 
     if (kind === 'kv' && Array.isArray(obj.items)) {
       const items = (obj.items as unknown[])
-        .filter((it): it is [string, unknown] => Array.isArray(it) && it.length === 2)
+        .filter(
+          (it): it is [string, unknown] => Array.isArray(it) && it.length === 2,
+        )
         .map(([k, v]) => [String(k), stringify(v)] as [string, string])
-      return items.length > 0 ? <KVList items={items} /> : <Text size="xs" c="dimmed">нет данных</Text>
+      return items.length > 0 ? (
+        <KVList items={items} />
+      ) : (
+        <Text size="xs" c="dimmed">
+          нет данных
+        </Text>
+      )
     }
 
     if (kind === 'text' && typeof obj.text === 'string') {
-      return <TextBlock text={obj.text} label={obj.label as string | undefined} />
+      return (
+        <TextBlock text={obj.text} label={obj.label as string | undefined} />
+      )
     }
 
     if (kind === 'files' && Array.isArray(obj.items)) {
       return (
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {(obj.items as unknown[]).map((f, i) => (
-            <Text key={i} size="xs" ff="monospace">{String(f)}</Text>
+            <Text key={i} size="xs" ff="monospace">
+              {String(f)}
+            </Text>
           ))}
         </Box>
       )
@@ -334,8 +376,14 @@ function StageIORenderer({ data }: { data: unknown }) {
 
     if (kind === 'error' && typeof obj.text === 'string') {
       return (
-        <Alert color="red" variant="light" title={String(obj.label ?? 'Ошибка')}>
-          <Text size="xs" ff="monospace" style={{ whiteSpace: 'pre-wrap' }}>{obj.text}</Text>
+        <Alert
+          color="red"
+          variant="light"
+          title={String(obj.label ?? 'Ошибка')}
+        >
+          <Text size="xs" ff="monospace" style={{ whiteSpace: 'pre-wrap' }}>
+            {obj.text}
+          </Text>
         </Alert>
       )
     }
@@ -344,7 +392,9 @@ function StageIORenderer({ data }: { data: unknown }) {
     if (typeof obj.summary === 'string') {
       return (
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Text size="sm" fw={600} style={{ lineHeight: 1.4 }}>{obj.summary}</Text>
+          <Text size="sm" fw={600} style={{ lineHeight: 1.4 }}>
+            {obj.summary}
+          </Text>
           {typeof obj.text === 'string' && obj.text !== obj.summary && (
             <TextBlock text={obj.text} />
           )}
@@ -366,24 +416,34 @@ function StageIORenderer({ data }: { data: unknown }) {
     return (
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {kvEntries.length > 0 && <KVList items={kvEntries} />}
-        {textEntries.map(([k, v]) => <TextBlock key={k} label={k} text={v} />)}
+        {textEntries.map(([k, v]) => (
+          <TextBlock key={k} label={k} text={v} />
+        ))}
       </Box>
     )
   }
 
-  return <Text size="xs" ff="monospace">{stringify(data)}</Text>
+  return (
+    <Text size="xs" ff="monospace">
+      {stringify(data)}
+    </Text>
+  )
 }
 
 function stringify(v: unknown): string {
   if (v === null || v === undefined) return '—'
   if (typeof v === 'string') return v
   if (typeof v === 'number' || typeof v === 'boolean') return String(v)
-  try { return JSON.stringify(v) } catch { return String(v) }
+  try {
+    return JSON.stringify(v)
+  } catch {
+    return String(v)
+  }
 }
 
 // ─── AgentBadge ───────────────────────────────────────────────────────────────
 
-function AgentBadge({ name, model }: { name: string; model: string }) {
+function AgentBadge({ model }: { model: string }) {
   return (
     <Group
       gap={6}
@@ -410,20 +470,22 @@ function AgentBadge({ name, model }: { name: string; model: string }) {
       >
         <IconSparkles size={10} color="#fff" />
       </Box>
-      {name && <Text size="xs" fw={500}>{name}</Text>}
-      {model && (
-        <>
-          <Text size="xs" c="dimmed">·</Text>
-          <Text size="xs" ff="monospace" c="dimmed">{model}</Text>
-        </>
-      )}
+      <Text size="xs" ff="monospace" fw={500}>
+        {model}
+      </Text>
     </Group>
   )
 }
 
 // ─── AskAgentComposer ─────────────────────────────────────────────────────────
 
-function AskAgentComposer({ agentName, stageLabel }: { agentName: string; stageLabel: string }) {
+function AskAgentComposer({
+  agentName,
+  stageLabel,
+}: {
+  agentName: string
+  stageLabel: string
+}) {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState('')
 
@@ -447,7 +509,13 @@ function AskAgentComposer({ agentName, stageLabel }: { agentName: string; stageL
         }}
       >
         <IconBulb size={13} color="var(--mantine-color-violet-4)" />
-        <Text size="xs" fw={600} tt="uppercase" c="dimmed" style={{ letterSpacing: '.06em' }}>
+        <Text
+          size="xs"
+          fw={600}
+          tt="uppercase"
+          c="dimmed"
+          style={{ letterSpacing: '.06em' }}
+        >
           Спросить у агента
         </Text>
         <span style={{ flex: 1 }} />
@@ -464,7 +532,9 @@ function AskAgentComposer({ agentName, stageLabel }: { agentName: string; stageL
         <Box px={14} pb={12}>
           <Text size="xs" c="dimmed" mb={8}>
             контекст стадии{' '}
-            <Text span size="xs" ff="monospace">{stageLabel}</Text>{' '}
+            <Text span size="xs" ff="monospace">
+              {stageLabel}
+            </Text>{' '}
             прикладывается автоматически
           </Text>
           <Box
@@ -481,10 +551,24 @@ function AskAgentComposer({ agentName, stageLabel }: { agentName: string; stageL
               placeholder={`Уточнить у ${agentName} — что именно сделано и почему`}
               minRows={3}
               autosize
-              styles={{ input: { background: 'transparent', border: 0, padding: 0, fontSize: 13 } }}
+              styles={{
+                input: {
+                  background: 'transparent',
+                  border: 0,
+                  padding: 0,
+                  fontSize: 13,
+                },
+              }}
             />
-            <Group justify="space-between" mt={8} pt={8} style={{ borderTop: '1px solid var(--mantine-color-dark-4)' }}>
-              <Text size="xs" c="dimmed">⌘+Enter — отправить</Text>
+            <Group
+              justify="space-between"
+              mt={8}
+              pt={8}
+              style={{ borderTop: '1px solid var(--mantine-color-dark-4)' }}
+            >
+              <Text size="xs" c="dimmed">
+                ⌘+Enter — отправить
+              </Text>
               <Box
                 component="button"
                 type="button"
@@ -514,16 +598,15 @@ function AskAgentComposer({ agentName, stageLabel }: { agentName: string; stageL
 // ─── StageDetailPanel ─────────────────────────────────────────────────────────
 
 interface StageDetailPanelProps {
-  taskId: number
   stage: StageView
   events: TaskEvent[]
 }
 
-function StageDetailPanel({ taskId, stage, events }: StageDetailPanelProps) {
+function StageDetailPanel({ stage, events }: StageDetailPanelProps) {
   const stageEvents = events.filter((e) => e.stage === stage.stage)
   const detail = stageDetail(events, stage.stage)
-  const agentMock = stageAgent(stage.stage)
-  const tokens = stageTokens(taskId, stage)
+
+  const tokens = (stage.tokensIn ?? 0) + (stage.tokensOut ?? 0)
   const isAgentStage = AGENT_STAGES.has(stage.stage)
   const isRunning = stage.status === 'running'
   const isFailed = stage.status === 'failed'
@@ -544,9 +627,12 @@ function StageDetailPanel({ taskId, stage, events }: StageDetailPanelProps) {
           </ThemeIcon>
           <Box>
             <Text size="sm">
-              Стадия <b>{STAGE_TITLE[stage.stage] ?? stage.stage}</b> ещё не выполнялась
+              Стадия <b>{STAGE_TITLE[stage.stage] ?? stage.stage}</b> ещё не
+              выполнялась
             </Text>
-            <Text size="xs" c="dimmed">Начнётся после завершения предыдущих.</Text>
+            <Text size="xs" c="dimmed">
+              Начнётся после завершения предыдущих.
+            </Text>
           </Box>
         </Group>
       </Paper>
@@ -580,7 +666,9 @@ function StageDetailPanel({ taskId, stage, events }: StageDetailPanelProps) {
         >
           {STAGE_TITLE[stage.stage] ?? stage.stage}
         </Text>
-        <Text size="xs" c="dimmed">·</Text>
+        <Text size="xs" c="dimmed">
+          ·
+        </Text>
 
         {isRunning && (
           <Group gap={6}>
@@ -594,71 +682,98 @@ function StageDetailPanel({ taskId, stage, events }: StageDetailPanelProps) {
                 flexShrink: 0,
               }}
             />
-            <Text size="xs" c="yellow.4">идёт сейчас</Text>
+            <Text size="xs" c="yellow.4">
+              идёт сейчас
+            </Text>
           </Group>
         )}
         {isDone && (
           <Group gap={5}>
             <IconCheck size={12} color="var(--mantine-color-green-5)" />
-            <Text size="xs" c="green.5">завершено</Text>
+            <Text size="xs" c="green.5">
+              завершено
+            </Text>
           </Group>
         )}
         {isFailed && (
           <Group gap={5}>
             <IconX size={12} color="var(--mantine-color-red-5)" />
-            <Text size="xs" c="red.5">провал</Text>
+            <Text size="xs" c="red.5">
+              провал
+            </Text>
           </Group>
         )}
 
         <Box style={{ flex: 1 }} />
 
-        {agentMock && <AgentBadge name={agentMock.name} model={agentMock.model} />}
+        {stage.modelName && <AgentBadge model={stage.modelName} />}
 
         <Group gap={10}>
           {stage.durationMs !== null && (
             <Group gap={4}>
               <IconClock size={12} color="var(--mantine-color-dimmed)" />
-              <Text size="xs" c="dimmed">{formatDuration(stage.durationMs)}</Text>
+              <Text size="xs" c="dimmed">
+                {formatDuration(stage.durationMs)}
+              </Text>
             </Group>
           )}
           {tokens > 0 && (
-            <Text size="xs" c="dimmed">{formatTokens(tokens)} ток.</Text>
+            <Text size="xs" c="dimmed">
+              {formatTokens(tokens)} ток.
+            </Text>
+          )}
+          {stage.costUsd !== null && (
+            <Text size="xs" c="dimmed">
+              {formatUsd(stage.costUsd)}
+            </Text>
           )}
         </Group>
       </Box>
 
       {/* Tabs */}
-      <Tabs value={tab} onChange={(v) => setTab(v ?? defaultTab)} variant="default">
+      <Tabs
+        value={tab}
+        onChange={(v) => setTab(v ?? defaultTab)}
+        variant="default"
+      >
         <Tabs.List>
-          <Tabs.Tab value="input" fz="xs">Вход</Tabs.Tab>
+          <Tabs.Tab value="input" fz="xs">
+            Вход
+          </Tabs.Tab>
           {isAgentStage && (
             <Tabs.Tab
               value="stream"
               fz="xs"
               rightSection={
-                isRunning
-                  ? (
-                    <Box
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: 'var(--mantine-color-yellow-4)',
-                        animation: 'pico-pulse 1.4s ease-in-out infinite',
-                      }}
-                    />
-                  )
-                  : (
-                    <Badge size="xs" variant="light" circle>
-                      {stageEvents.filter(e => e.kind !== 'stage_started' && e.kind !== 'stage_finished').length}
-                    </Badge>
-                  )
+                isRunning ? (
+                  <Box
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: 'var(--mantine-color-yellow-4)',
+                      animation: 'pico-pulse 1.4s ease-in-out infinite',
+                    }}
+                  />
+                ) : (
+                  <Badge size="xs" variant="light" circle>
+                    {
+                      stageEvents.filter(
+                        (e) =>
+                          e.kind !== 'stage_started' &&
+                          e.kind !== 'stage_finished',
+                      ).length
+                    }
+                  </Badge>
+                )
               }
             >
               Поток событий
             </Tabs.Tab>
           )}
-          <Tabs.Tab value="output" fz="xs">Выход</Tabs.Tab>
+          <Tabs.Tab value="output" fz="xs">
+            Выход
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="input" p="md" mih={120}>
@@ -679,8 +794,15 @@ function StageDetailPanel({ taskId, stage, events }: StageDetailPanelProps) {
       {/* Traceback */}
       {isFailed && detail.error && (
         <Box p="md" pt={0}>
-          <Alert color="red" variant="light" icon={<IconAlertTriangle size={16} />} title="Стадия упала">
-            <Text size="xs" ff="monospace" style={{ whiteSpace: 'pre-wrap' }}>{detail.error}</Text>
+          <Alert
+            color="red"
+            variant="light"
+            icon={<IconAlertTriangle size={16} />}
+            title="Стадия упала"
+          >
+            <Text size="xs" ff="monospace" style={{ whiteSpace: 'pre-wrap' }}>
+              {detail.error}
+            </Text>
           </Alert>
         </Box>
       )}
@@ -688,7 +810,7 @@ function StageDetailPanel({ taskId, stage, events }: StageDetailPanelProps) {
       {/* AskAgentComposer stub */}
       {isAgentStage && (
         <AskAgentComposer
-          agentName={agentMock?.name ?? 'агента'}
+          agentName={stage.modelName ?? 'агента'}
           stageLabel={STAGE_TITLE[stage.stage] ?? stage.stage}
         />
       )}
@@ -710,7 +832,11 @@ function EventStreamPanel({ events }: { events: TaskEvent[] }) {
   }, [visible.length])
 
   if (visible.length === 0) {
-    return <Text size="xs" c="dimmed" p="xs">Пока нет событий агента</Text>
+    return (
+      <Text size="xs" c="dimmed" p="xs">
+        Пока нет событий агента
+      </Text>
+    )
   }
 
   return (
@@ -718,7 +844,9 @@ function EventStreamPanel({ events }: { events: TaskEvent[] }) {
       ref={viewport}
       style={{ maxHeight: 300, overflowY: 'auto', padding: '6px 0' }}
     >
-      {visible.map((event) => <EventRow key={event.seq} event={event} />)}
+      {visible.map((event) => (
+        <EventRow key={event.seq} event={event} />
+      ))}
     </Box>
   )
 }
@@ -737,14 +865,27 @@ function EventRow({ event }: { event: TaskEvent }) {
         align="flex-start"
         style={{ borderBottom: '1px solid var(--mantine-color-dark-6)' }}
       >
-        <Box mt={2} style={{ flexShrink: 0 }}><IconTool size={13} color="var(--mantine-color-violet-4)" /></Box>
-        <Group gap={6} style={{ flex: 1, minWidth: 0 }} align="baseline" wrap="nowrap">
-          <Text size="xs" fw={600} ff="monospace">{tool}</Text>
+        <Box mt={2} style={{ flexShrink: 0 }}>
+          <IconTool size={13} color="var(--mantine-color-violet-4)" />
+        </Box>
+        <Group
+          gap={6}
+          style={{ flex: 1, minWidth: 0 }}
+          align="baseline"
+          wrap="nowrap"
+        >
+          <Text size="xs" fw={600} ff="monospace">
+            {tool}
+          </Text>
           {detail && (
-            <Text size="xs" c="dimmed" ff="monospace" truncate title={detail}>{detail}</Text>
+            <Text size="xs" c="dimmed" ff="monospace" truncate title={detail}>
+              {detail}
+            </Text>
           )}
         </Group>
-        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>{fmtTs(event.tsMs)}</Text>
+        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>
+          {fmtTs(event.tsMs)}
+        </Text>
       </Group>
     )
   }
@@ -760,18 +901,30 @@ function EventRow({ event }: { event: TaskEvent }) {
         align="flex-start"
         style={{ borderBottom: '1px solid var(--mantine-color-dark-6)' }}
       >
-        <Box mt={2} style={{ flexShrink: 0 }}><IconMessage size={13} color="var(--mantine-color-blue-4)" /></Box>
+        <Box mt={2} style={{ flexShrink: 0 }}>
+          <IconMessage size={13} color="var(--mantine-color-blue-4)" />
+        </Box>
         <Box style={{ flex: 1, minWidth: 0 }}>
-          <Text size="xs" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          <Text
+            size="xs"
+            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+          >
             {open ? text : preview}
           </Text>
           {text.length > 220 && (
-            <Anchor component="button" type="button" size="xs" onClick={() => setOpen((v) => !v)}>
+            <Anchor
+              component="button"
+              type="button"
+              size="xs"
+              onClick={() => setOpen((v) => !v)}
+            >
               {open ? 'свернуть' : 'показать целиком'}
             </Anchor>
           )}
         </Box>
-        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>{fmtTs(event.tsMs)}</Text>
+        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>
+          {fmtTs(event.tsMs)}
+        </Text>
       </Group>
     )
   }
@@ -785,12 +938,20 @@ function EventRow({ event }: { event: TaskEvent }) {
         align="flex-start"
         style={{ borderBottom: '1px solid var(--mantine-color-dark-6)' }}
       >
-        <Box mt={2} style={{ flexShrink: 0 }}><IconHandStop size={13} color="var(--mantine-color-orange-5)" /></Box>
-        <Box style={{ flex: 1, minWidth: 0 }}>
-          <Text size="xs" fw={600} c="orange" mb={2}>Агент остановился и ждёт человека</Text>
-          <Text size="xs" style={{ whiteSpace: 'pre-wrap' }}>{str(event.payload, 'questions')}</Text>
+        <Box mt={2} style={{ flexShrink: 0 }}>
+          <IconHandStop size={13} color="var(--mantine-color-orange-5)" />
         </Box>
-        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>{fmtTs(event.tsMs)}</Text>
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <Text size="xs" fw={600} c="orange" mb={2}>
+            Агент остановился и ждёт человека
+          </Text>
+          <Text size="xs" style={{ whiteSpace: 'pre-wrap' }}>
+            {str(event.payload, 'questions')}
+          </Text>
+        </Box>
+        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>
+          {fmtTs(event.tsMs)}
+        </Text>
       </Group>
     )
   }
@@ -804,14 +965,24 @@ function EventRow({ event }: { event: TaskEvent }) {
         align="flex-start"
         style={{ borderBottom: '1px solid var(--mantine-color-dark-6)' }}
       >
-        <Box mt={2} style={{ flexShrink: 0 }}><IconAlertTriangle size={13} color="var(--mantine-color-red-5)" /></Box>
+        <Box mt={2} style={{ flexShrink: 0 }}>
+          <IconAlertTriangle size={13} color="var(--mantine-color-red-5)" />
+        </Box>
         <Box style={{ flex: 1, minWidth: 0 }}>
-          <Text size="xs" fw={600} c="red" mb={2}>Стадия упала</Text>
-          <Text size="xs" ff="monospace" style={{ whiteSpace: 'pre-wrap', fontSize: 10 }}>
+          <Text size="xs" fw={600} c="red" mb={2}>
+            Стадия упала
+          </Text>
+          <Text
+            size="xs"
+            ff="monospace"
+            style={{ whiteSpace: 'pre-wrap', fontSize: 10 }}
+          >
             {str(event.payload, 'error')}
           </Text>
         </Box>
-        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>{fmtTs(event.tsMs)}</Text>
+        <Text size="xs" c="dimmed" ff="monospace" style={{ flexShrink: 0 }}>
+          {fmtTs(event.tsMs)}
+        </Text>
       </Group>
     )
   }
@@ -826,8 +997,6 @@ function str(payload: Record<string, unknown>, key: string): string {
 
 // ─── Main export: TaskView ────────────────────────────────────────────────────
 
-import * as React from 'react'
-
 interface TaskViewProps {
   task: TaskView
   events: TaskEvent[]
@@ -839,7 +1008,8 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
 
   const [picked, setPicked] = useState<Stage | null>(null)
   const activeStage = picked ?? defaultStage(task)
-  const stage = task.stages.find((s) => s.stage === activeStage) ?? task.stages[0]
+  const stage =
+    task.stages.find((s) => s.stage === activeStage) ?? task.stages[0]
 
   const { mutate: resume, isPending: isResuming } = useMutation({
     mutationFn: () => resumeTask(task.id),
@@ -850,7 +1020,7 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
   })
 
   const questions = stageDetail(events, 'plan').questions
-  const tokens = taskTokens(task)
+  const tokens = task.tokensInTotal + task.tokensOutTotal
   const ghUrl = issueUrl(task)
 
   return (
@@ -865,7 +1035,9 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
         >
           <Stack gap="xs" align="flex-start">
             {questions && (
-              <Text size="xs" style={{ whiteSpace: 'pre-wrap' }}>{questions}</Text>
+              <Text size="xs" style={{ whiteSpace: 'pre-wrap' }}>
+                {questions}
+              </Text>
             )}
             <Button
               size="xs"
@@ -904,12 +1076,23 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
             <Group gap={14} style={{ flexWrap: 'wrap' }}>
               <Group gap={5} wrap="nowrap">
                 <IconHash size={11} color="var(--mantine-color-dimmed)" />
-                <Text size="xs" ff="monospace" c="dimmed">{MOCK_REPO}</Text>
+                <Text size="xs" ff="monospace" c="dimmed">
+                  {MOCK_REPO}
+                </Text>
               </Group>
               {task.branch && (
                 <Group gap={5} wrap="nowrap">
-                  <IconGitBranch size={11} color="var(--mantine-color-dimmed)" />
-                  <Text size="xs" ff="monospace" c="dimmed" truncate style={{ maxWidth: 280 }}>
+                  <IconGitBranch
+                    size={11}
+                    color="var(--mantine-color-dimmed)"
+                  />
+                  <Text
+                    size="xs"
+                    ff="monospace"
+                    c="dimmed"
+                    truncate
+                    style={{ maxWidth: 280 }}
+                  >
                     {task.branch}
                   </Text>
                 </Group>
@@ -917,7 +1100,14 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
               {task.worktreePath && (
                 <Group gap={5} wrap="nowrap">
                   <IconFolder size={11} color="var(--mantine-color-dimmed)" />
-                  <Text size="xs" ff="monospace" c="dimmed" truncate style={{ maxWidth: 320 }} title={task.worktreePath}>
+                  <Text
+                    size="xs"
+                    ff="monospace"
+                    c="dimmed"
+                    truncate
+                    style={{ maxWidth: 320 }}
+                    title={task.worktreePath}
+                  >
                     {task.worktreePath}
                   </Text>
                 </Group>
@@ -929,7 +1119,13 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
                 </Group>
               </Anchor>
               {task.prUrl && (
-                <Anchor href={task.prUrl} target="_blank" rel="noreferrer" size="xs" c="orange">
+                <Anchor
+                  href={task.prUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  size="xs"
+                  c="orange"
+                >
                   <Group gap={4} wrap="nowrap">
                     <span>PR</span>
                     <IconExternalLink size={11} />
@@ -941,12 +1137,25 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
 
           {/* Right-side stats */}
           <Stack gap={4} align="flex-end">
-            <Badge size="xs" variant="light" color={connected ? 'green' : 'gray'}>
+            <Badge
+              size="xs"
+              variant="light"
+              color={connected ? 'green' : 'gray'}
+            >
               {connected ? '● live' : '○ offline'}
             </Badge>
+            {task.modelName && (
+              <Text size="xs" ff="monospace" c="dimmed">
+                {task.modelName}
+              </Text>
+            )}
             <Group gap={4}>
-              <Text size="xs" c="dimmed">{formatTokens(tokens)} ток.</Text>
-              <Text size="xs" c="dimmed">≈ {formatUsd(tokensToUsd(tokens))}</Text>
+              <Text size="xs" c="dimmed">
+                {formatTokens(tokens)} ток.
+              </Text>
+              <Text size="xs" c="dimmed">
+                {formatUsd(task.totalCostUsd)}
+              </Text>
             </Group>
             {task.attempts > 1 && (
               <Badge size="xs" variant="light" color="yellow">
@@ -960,10 +1169,23 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
       {/* Stage timeline */}
       <Paper withBorder p="md">
         <Group justify="space-between" mb={18} align="baseline">
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '.1em' }}>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '.1em' }}
+          >
             Таймлайн стадий
           </Text>
-          <Text size="xs" style={{ color: connected ? 'var(--mantine-color-green-5)' : 'var(--mantine-color-dimmed)' }}>
+          <Text
+            size="xs"
+            style={{
+              color: connected
+                ? 'var(--mantine-color-green-5)'
+                : 'var(--mantine-color-dimmed)',
+            }}
+          >
             {connected ? '● live' : 'кликните на стадию, чтобы увидеть детали'}
           </Text>
         </Group>
@@ -978,12 +1200,7 @@ export function TaskView({ task, events, connected }: TaskViewProps) {
 
       {/* Stage detail */}
       {stage && (
-        <StageDetailPanel
-          key={stage.stage}
-          taskId={task.id}
-          stage={stage}
-          events={events}
-        />
+        <StageDetailPanel key={stage.stage} stage={stage} events={events} />
       )}
     </Stack>
   )

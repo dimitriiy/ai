@@ -4,7 +4,7 @@ import cors from "cors";
 import express from "express";
 import tasksRouter from "./api/tasks";
 import fetchRouter from "./api/fetch";
-import worktreeRouter from "./api/worktree";
+import repoRouter from "./api/repo";
 
 const app = express();
 
@@ -17,7 +17,7 @@ app.use(
 
 app.use("/api", tasksRouter);
 app.use("/api", fetchRouter);
-app.use("/api", worktreeRouter);
+app.use("/api", repoRouter);
 
 function onServerStart() {
   console.log("server start");

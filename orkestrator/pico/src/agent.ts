@@ -2,10 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { createAgent } from "./agents/index.js";
 import type { AgentStage } from "./agents/index.js";
+import type { AgentResult } from "./agents/types.js";
 import type { Task } from "./types.js";
 import { listFiles } from "./fs-utils.js";
 
 export type { AgentStage };
+export type AgentMeta = AgentResult["meta"];
+
+export interface AgentCallResult {
+  response: string;
+  meta: AgentMeta;
+}
 
 function renderPrompt(
   stage: AgentStage,
@@ -26,7 +33,7 @@ export async function callAgent(
   task: Task,
   worktree: string,
   input: string,
-): Promise<string> {
+): Promise<AgentCallResult> {
   const prompt = renderPrompt(stage, {
     title: task.issueTitle,
     body: task.issueBody,
@@ -35,7 +42,7 @@ export async function callAgent(
 
   const agent = createAgent();
   const result = await agent.apply(task, worktree, prompt, stage);
-  return result.response;
+  return { response: result.response, meta: result.meta };
 }
 
 /** Дерево файлов + содержимое нескольких файлов, похожих на тему issue. */

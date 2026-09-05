@@ -1,5 +1,4 @@
 import { listTasks } from "./state.js";
-import { syncIssues } from "./github.js";
 
 const INTERVAL_MS = 15_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -12,5 +11,5 @@ for (;;) {
     }
 
     await sleep(INTERVAL_MS);
-  } catch (e) {}
+  } catch {}
 }

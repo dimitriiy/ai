@@ -2,14 +2,6 @@ import fs from "fs";
 import { config } from "./config";
 import { run } from "./shell";
 import path from "path";
-import { CliAgent } from "./agents/cli";
-import { getTask } from "./state";
-
-export async function worktreeTest() {
-  const agent = new CliAgent();
-
-  agent.apply(getTask(1), "orkestrator/pico/worktrees/_base");
-}
 
 const basePath = path.join(config.worktreeRoot, "_base");
 

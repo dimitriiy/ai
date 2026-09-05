@@ -1,17 +1,14 @@
-import { AppShell } from '@mantine/core';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
+import { AppShell } from '@mantine/core'
+import { Sidebar } from './Sidebar'
+import { Header } from './Header'
 
 interface AppLayoutProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <AppShell
-      navbar={{ width: 260, breakpoint: 'sm' }}
-      padding={0}
-    >
+    <AppShell navbar={{ width: 260, breakpoint: 'sm' }} padding={0}>
       <AppShell.Navbar>
         <Sidebar />
       </AppShell.Navbar>
@@ -21,5 +18,5 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </AppShell.Main>
     </AppShell>
-  );
+  )
 }

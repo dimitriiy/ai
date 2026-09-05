@@ -1,5 +1,7 @@
 import { Octokit } from "@octokit/rest";
 import { config, repoName, repoOwner } from "./config";
+import { upsertTask } from "./state";
+
 export const octokit = new Octokit({ auth: config.githubToken });
 
 export interface IssueSummary {
@@ -38,8 +40,6 @@ export async function commentOnIssue(
     body,
   });
 }
-
-import { upsertTask } from "./state";
 
 export async function syncIssues(): Promise<number> {
   const issues = await listTaskIssues();

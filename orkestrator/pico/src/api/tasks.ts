@@ -66,7 +66,6 @@ router.post("/tasks/:id/resume", (req, res) => {
   }
   const updated = updateTask(task.id, { status: "pending", stage: "fetch" });
 
-  console.log(updated);
   res.json(projectTask(updated, readEvents(updated.id), true));
 });
 

@@ -1,10 +1,12 @@
 import { callAgent } from "../agent";
+import type { AgentMeta } from "../agent";
 import { run as sh } from "../shell";
 import type { Task } from "../types";
 
 export interface ImplementResult {
   summary: string; // что агент сказал про свою правку
   written: string[]; // относительные пути файлов, которые он переписал
+  agentMeta?: AgentMeta;
 }
 
 export async function run(
@@ -20,10 +22,15 @@ export async function run(
       : "",
   ].join("\n");
 
-  const response = await callAgent("implement", task, worktreePath, input);
+  const { response, meta } = await callAgent(
+    "implement",
+    task,
+    worktreePath,
+    input,
+  );
   const written = await changedFiles(worktreePath);
 
-  return { summary: response, written };
+  return { summary: response, written, agentMeta: meta };
 }
 
 /** Пути файлов, изменённых агентом в worktree, по `git status --porcelain`. */

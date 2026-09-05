@@ -49,15 +49,30 @@ export interface StageView {
   stage: Stage
   status: StageStatus
   durationMs: number | null
+  costUsd: number | null
+  tokensIn: number | null
+  tokensOut: number | null
+  modelName: string | null
 }
 
 export interface TaskView extends Task {
   stages: StageView[]
   events?: TaskEvent[]
+  totalCostUsd: number
+  tokensInTotal: number
+  tokensOutTotal: number
+  modelName: string | null
 }
 
 /** Порядок стадий — зеркалит PIPELINE из src/types.ts на бэке. */
-export const PIPELINE: Stage[] = ['fetch', 'context', 'plan', 'implement', 'verify', 'pr']
+export const PIPELINE: Stage[] = [
+  'fetch',
+  'context',
+  'plan',
+  'implement',
+  'verify',
+  'pr',
+]
 
 export const STAGE_TITLE: Record<string, string> = {
   fetch: 'Забрать issue',

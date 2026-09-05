@@ -10,15 +10,13 @@ import {
   IconSearch,
   IconGitPullRequest,
   IconPlayerPlay,
-  IconFlask,
 } from '@tabler/icons-react'
 import { useMutation } from '@tanstack/react-query'
-import { syncIssues, worktreeTest } from '@/api'
+import { syncIssues } from '@/api'
 
 export function Header() {
-  const { mutate: pull, isPending: syncing } = useMutation({ mutationFn: syncIssues })
-  const { mutate: runWorktreeTest, isPending: worktreeTesting } = useMutation({
-    mutationFn: worktreeTest,
+  const { mutate: pull, isPending: syncing } = useMutation({
+    mutationFn: syncIssues,
   })
 
   return (
@@ -58,14 +56,6 @@ export function Header() {
           </Button>
           <Button color="violet" leftSection={<IconPlayerPlay size={16} />}>
             Run
-          </Button>
-          <Button
-            variant="default"
-            leftSection={<IconFlask size={16} />}
-            onClick={() => runWorktreeTest()}
-            loading={worktreeTesting}
-          >
-            Worktree Test
           </Button>
         </Group>
       </Group>
